@@ -23,11 +23,25 @@ struct Bus{
 	std::vector<const Stop*> stops;
 };
 
+struct StopInfo{
+	bool isFind = false;
+	std::set<std::string> buses {};
+};
+
+struct BusInfo{
+	bool isFind = false;
+	int R = 0;
+	int U = 0;
+	double L = 0;
+};
+
 }; //namespace detail
 
 using geo::Coordinates;
 using detail::Stop;
 using detail::Bus;
+using detail::StopInfo;
+using detail::BusInfo;
 
 
 class TransportCatalogue {
@@ -36,14 +50,14 @@ public:
 	const Stop* FindStop(std::string_view stop_name) const;
 	void AddBus(std::string_view bus_name, std::vector<std::string_view> route);
 	const Bus* FindBus(std::string_view bus_name) const;
-	std::string GetBusInfo(std::string_view bus_name) const;
-	std::string GetStopInfo(std::string_view stop_name) const;
+	BusInfo GetBusInfo(std::string_view bus_name) const;
+	StopInfo GetStopInfo(std::string_view stop_name) const;
 
 private:
 
-	int StopsOnRoute(std::string_view bus_name) const;
-	int UniqueStops(std::string_view bus_name) const;
-	double RouteLength(std::string_view bus_name) const;
+	int GetStopsOnRoute(std::string_view bus_name) const;
+	int GetUniqueStops(std::string_view bus_name) const;
+	double GetRouteLength(std::string_view bus_name) const;
 
 	std::set<std::string> GetSetBuses(const Stop* stop) const;
 

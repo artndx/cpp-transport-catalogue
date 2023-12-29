@@ -1,9 +1,11 @@
-#include <iomanip>
 #include <sstream>
 #include <unordered_set>
 #include "transport_catalogue.h"
 
 using std::string_literals::operator""s;
+using transport_catalogue::detail::StopInfo;
+using transport_catalogue::detail::BusInfo;
+
 using namespace transport_catalogue;
 
 void TransportCatalogue::AddStop(std::string_view stop_name, const Coordinates coords){
@@ -38,54 +40,36 @@ const Bus* TransportCatalogue::FindBus(std::string_view bus_name) const{
 }
 
 
-std::string TransportCatalogue::GetBusInfo(std::string_view bus_name) const{
+BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name) const{
     const Bus* bus = FindBus(bus_name);
-    std::ostringstream s_out;
+    BusInfo result;
     if(bus == nullptr){
-        s_out << "Bus " << std::string(bus_name) << ": not found\n";
-        return s_out.str();
+        return result;
     }
-    int R = StopsOnRoute(bus_name);
-    int U = UniqueStops(bus_name);
-    double L = RouteLength(bus_name);
-    s_out << std::fixed << std::setprecision(2) << "Bus "s << std::string(bus_name) << ": "s 
-    << R << " stops on route, "s 
-    << U << " unique stops, "s 
-    << L << " route length\n"s;
-    return s_out.str();
+    result.isFind = true;
+    result.R = GetStopsOnRoute(bus_name);
+    result.U = GetUniqueStops(bus_name);
+    result.L = GetRouteLength(bus_name);
+    return result;
 
 }
 
-std::string TransportCatalogue::GetStopInfo(std::string_view stop_name) const{
+StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) const{
     const Stop* stop = FindStop(stop_name);
-    std::ostringstream s_out;
+    StopInfo result;
     if(stop == nullptr){
-        s_out << "Stop " << std::string(stop_name) << ": not found\n";
-        return s_out.str();
+        return result;
     }
-    std::set<std::string> buses = GetSetBuses(stop);
-    if(buses.empty()){
-        s_out << "Stop " << stop->name << ": no buses\n";
-        return s_out.str();
-    }
-    s_out << "Stop " << stop->name << ": buses ";
-    bool isFirst = true;
-    for(std::string bus : buses){
-        if(!isFirst){
-            s_out << ' ';
-        }
-        isFirst = false;
-        s_out << bus;
-    }
-    s_out << "\n";
-    return s_out.str();
+    result.isFind = true;
+    result.buses = GetSetBuses(stop);
+    return result;
 }
 
-int TransportCatalogue::StopsOnRoute(std::string_view bus_name) const{
+int TransportCatalogue::GetStopsOnRoute(std::string_view bus_name) const{
     return busname_to_bus_.at(std::string(bus_name))->stops.size();
 }
 
-int TransportCatalogue::UniqueStops(std::string_view bus_name) const{
+int TransportCatalogue::GetUniqueStops(std::string_view bus_name) const{
     std::vector<const Stop*> stops = busname_to_bus_.at(std::string(bus_name))->stops;
     std::unordered_set<std::string> names_stops;
     for(const Stop* stop : stops){
@@ -94,7 +78,7 @@ int TransportCatalogue::UniqueStops(std::string_view bus_name) const{
     return names_stops.size();
 }
 
-double TransportCatalogue::RouteLength(std::string_view bus_name) const{
+double TransportCatalogue::GetRouteLength(std::string_view bus_name) const{
     std::vector<const Stop*> stops = busname_to_bus_.at(std::string(bus_name))->stops;
     double result = 0;
     for(int i = 0; i < stops.size()-1; ++i){

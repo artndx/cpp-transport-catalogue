@@ -1,7 +1,11 @@
 #include "stat_reader.h"
 
+#include <iostream>
+#include <iomanip>
 using namespace transport_catalogue;
-
+using std::string_literals::operator""s;
+using transport_catalogue::detail::BusInfo;
+using transport_catalogue::detail::StopInfo;
 
 stat_reader::Request stat_reader::ParseRequest(std::string_view request){
     size_t space = request.find_first_of(' ');
@@ -14,10 +18,32 @@ void stat_reader::ParseAndPrintStat(const TransportCatalogue& transport_catalogu
                        std::ostream& output) {
     auto [command, data] = stat_reader::ParseRequest(raw_request);
     if(command == "Bus"){
-        output << transport_catalogue.GetBusInfo(data);
+        BusInfo result = transport_catalogue.GetBusInfo(data);
+        if(!result.isFind){
+            output << "Bus "s << data << ": not found\n"s;
+            return;
+        }
+        output << std::fixed << std::setprecision(2) 
+        << "Bus "s << data << ": "s 
+        << result.R << " stops on route, " 
+        << result.U << " unique stops, " 
+        << result.L << " route length\n";
     }
     if(command == "Stop"){
-        output << transport_catalogue.GetStopInfo(data);
+        StopInfo result = transport_catalogue.GetStopInfo(data);
+        if(!result.isFind){
+            output << "Stop "s << data << ": not found\n"s;
+            return;
+        }
+        std::set<std::string>& buses = result.buses;
+        if(buses.empty()){
+            output << "Stop "s << data << ": no buses\n"s;
+            return;
+        }
+        output << "Stop "s << data << ": buses";
+        for(const std::string& bus : buses){
+            output << ' ' << bus;
+        }
+        output << "\n";
     }
 }
-
