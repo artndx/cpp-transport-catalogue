@@ -17,6 +17,11 @@ struct Coordinates {
     }
 };
 
+struct Distance{
+    std::string stop_name;
+    int distance;
+};
+
 inline double ComputeDistance(Coordinates from, Coordinates to) {
     using namespace std;
     if (from == to) {

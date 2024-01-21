@@ -32,12 +32,20 @@ struct BusInfo{
 	bool isFind = false;
 	int R = 0;
 	int U = 0;
-	double L = 0;
+	int L = 0;
+	double C = 0;
+};
+
+struct StopsPtrPairHasher{
+    size_t operator()(const std::pair<const Stop*, const Stop*>& value) const{
+        return std::hash<const void*>{}(value.first) * 37 + std::hash<const void*>{}(value.second);
+    } 
 };
 
 }; //namespace detail
 
 using geo::Coordinates;
+using geo::Distance;
 using detail::Stop;
 using detail::Bus;
 using detail::StopInfo;
@@ -47,17 +55,19 @@ using detail::BusInfo;
 class TransportCatalogue {
 public:
 	void AddStop(std::string_view stop_name, Coordinates coords);
+	void AddStopDistances(std::string_view stop_name, std::vector<Distance> distances);
 	const Stop* FindStop(std::string_view stop_name) const;
 	void AddBus(std::string_view bus_name, std::vector<std::string_view> route);
 	const Bus* FindBus(std::string_view bus_name) const;
 	BusInfo GetBusInfo(std::string_view bus_name) const;
 	StopInfo GetStopInfo(std::string_view stop_name) const;
-
+	void PrintStopDistance() const;
 private:
 
-	int GetStopsOnRoute(std::string_view bus_name) const;
-	int GetUniqueStops(std::string_view bus_name) const;
-	double GetRouteLength(std::string_view bus_name) const;
+	int GetStopsOnRoute(const Bus* bus) const;
+	int GetUniqueStops(const Bus* bus) const;
+	double GetRouteLength(const Bus* bus) const;
+	int GetLengthBus(const Bus* bus) const;
 
 	std::set<std::string> GetSetBuses(const Stop* stop) const;
 
@@ -68,6 +78,8 @@ private:
 	std::unordered_map<std::string, Bus*> busname_to_bus_;
 
 	std::unordered_map<const Stop*, std::set<std::string>> stop_to_buses_;
+
+	std::unordered_map<std::pair<const Stop*, const Stop*>, int, detail::StopsPtrPairHasher> stops_distances_;
 };
 
 }; //namespace transport_catalogue

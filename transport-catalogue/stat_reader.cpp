@@ -14,20 +14,28 @@ stat_reader::Request stat_reader::ParseRequest(std::string_view request){
     return {command, data};
 }
 
+void Trim(std::string& string) {
+    const auto start = string.find_first_not_of(' ');
+    const auto end = string.find_last_not_of(' ') - start + 1;
+    string = string.substr(start, end);
+}
+
 void stat_reader::ParseAndPrintStat(const TransportCatalogue& transport_catalogue, std::string_view raw_request,
                        std::ostream& output) {
     auto [command, data] = stat_reader::ParseRequest(raw_request);
+    Trim(data);
     if(command == "Bus"){
-        BusInfo result = transport_catalogue.GetBusInfo(data);
+        BusInfo result = transport_catalogue.GetBusInfo((data));
         if(!result.isFind){
             output << "Bus "s << data << ": not found\n"s;
             return;
         }
-        output << std::fixed << std::setprecision(2) 
+        output << std::fixed << std::setprecision(5) 
         << "Bus "s << data << ": "s 
         << result.R << " stops on route, " 
         << result.U << " unique stops, " 
-        << result.L << " route length\n";
+        << result.L << " route length, "
+        << result.C << " route curvature\n";
     }
     if(command == "Stop"){
         StopInfo result = transport_catalogue.GetStopInfo(data);
