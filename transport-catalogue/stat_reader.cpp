@@ -20,38 +20,46 @@ void Trim(std::string& string) {
     string = string.substr(start, end);
 }
 
+void PrintBusInfo(std::string_view data, const BusInfo& result, std::ostream& output){
+    if(!result.is_find){
+        output << "Bus "s << data << ": not found\n"s;
+        return;
+    }
+    output << std::fixed << std::setprecision(5) 
+    << "Bus "s << data << ": "s 
+    << result.route_length << " stops on route, " 
+    << result.unique_stops << " unique stops, " 
+    << result.lenght_bus << " route length, "
+    << result.curvature << " route curvature\n";
+}
+
+void PrintStopInfo(std::string_view data, const StopInfo& result, std::ostream& output){
+    if(!result.is_find){
+        output << "Stop "s << data << ": not found\n"s;
+        return;
+    }
+    std::set<std::string> buses = result.buses;
+    if(buses.empty()){
+        output << "Stop "s << data << ": no buses\n"s;
+        return;
+    }
+    output << "Stop "s << data << ": buses";
+    for(const std::string& bus : buses){
+        output << ' ' << bus;
+    }
+    output << "\n";
+}
+
 void stat_reader::ParseAndPrintStat(const TransportCatalogue& transport_catalogue, std::string_view raw_request,
                        std::ostream& output) {
     auto [command, data] = stat_reader::ParseRequest(raw_request);
     Trim(data);
     if(command == "Bus"){
-        BusInfo result = transport_catalogue.GetBusInfo((data));
-        if(!result.isFind){
-            output << "Bus "s << data << ": not found\n"s;
-            return;
-        }
-        output << std::fixed << std::setprecision(5) 
-        << "Bus "s << data << ": "s 
-        << result.R << " stops on route, " 
-        << result.U << " unique stops, " 
-        << result.L << " route length, "
-        << result.C << " route curvature\n";
+        BusInfo result = transport_catalogue.GetBusInfo(data);
+        PrintBusInfo(data, result, output);
     }
     if(command == "Stop"){
         StopInfo result = transport_catalogue.GetStopInfo(data);
-        if(!result.isFind){
-            output << "Stop "s << data << ": not found\n"s;
-            return;
-        }
-        std::set<std::string>& buses = result.buses;
-        if(buses.empty()){
-            output << "Stop "s << data << ": no buses\n"s;
-            return;
-        }
-        output << "Stop "s << data << ": buses";
-        for(const std::string& bus : buses){
-            output << ' ' << bus;
-        }
-        output << "\n";
+        PrintStopInfo(data, result, output);
     }
 }

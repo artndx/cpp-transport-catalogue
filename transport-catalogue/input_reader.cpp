@@ -156,7 +156,10 @@ void input_reader::InputReader::ApplyCommands([[maybe_unused]] TransportCatalogu
         catalogue.AddStop(com.id, ParseCoordinates(coords));
     }
     for(const auto& [stop_id, stop_distances] : stop_name_to_distance_commands){
-        catalogue.AddStopDistances(stop_id, ParseDistances(stop_distances));
+        std::vector<geo::Distance> distances = ParseDistances(stop_distances);
+        for(const geo::Distance& dist : distances){
+            catalogue.AddStopDistance(stop_id, dist.stop_name, dist.distance);
+        }
     }
     for(const CommandDescription& com : commands_.at("Bus")){
         catalogue.AddBus(com.id, ParseRoute(com.description));

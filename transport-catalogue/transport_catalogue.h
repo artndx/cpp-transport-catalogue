@@ -24,16 +24,16 @@ struct Bus{
 };
 
 struct StopInfo{
-	bool isFind = false;
+	bool is_find = false;
 	std::set<std::string> buses {};
 };
 
 struct BusInfo{
-	bool isFind = false;
-	int R = 0;
-	int U = 0;
-	int L = 0;
-	double C = 0;
+	bool is_find = false;
+	int route_length = 0;
+	int unique_stops = 0;
+	int lenght_bus = 0;
+	double curvature = 0;
 };
 
 struct StopsPtrPairHasher{
@@ -55,13 +55,12 @@ using detail::BusInfo;
 class TransportCatalogue {
 public:
 	void AddStop(std::string_view stop_name, Coordinates coords);
-	void AddStopDistances(std::string_view stop_name, std::vector<Distance> distances);
+	void AddStopDistance(std::string_view stop_name, std::string_view other_stop_name, int distance);
 	const Stop* FindStop(std::string_view stop_name) const;
 	void AddBus(std::string_view bus_name, std::vector<std::string_view> route);
 	const Bus* FindBus(std::string_view bus_name) const;
 	BusInfo GetBusInfo(std::string_view bus_name) const;
 	StopInfo GetStopInfo(std::string_view stop_name) const;
-	void PrintStopDistance() const;
 private:
 
 	int GetStopsOnRoute(const Bus* bus) const;

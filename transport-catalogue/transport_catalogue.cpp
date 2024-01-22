@@ -15,17 +15,15 @@ void TransportCatalogue::AddStop(std::string_view stop_name, const Coordinates c
     stop_to_buses_[&stops_.back()];
 }
 
-void TransportCatalogue::AddStopDistances(std::string_view stop_name, std::vector<Distance> distances){
+void TransportCatalogue::AddStopDistance(std::string_view stop_name, std::string_view other_stop_name, int distance){
     const Stop* stop = FindStop(stop_name);
-    for(const Distance& dist : distances){
-        const Stop* other_stop = FindStop(dist.stop_name);
-        std::pair<const Stop*, const Stop*> key = {stop, other_stop};
-        stops_distances_[key] = dist.distance;
+    const Stop* other_stop = FindStop(other_stop_name);
+    std::pair<const Stop*, const Stop*> key = {stop, other_stop};
+    stops_distances_[key] = distance;
 
-        std::pair<const Stop*, const Stop*> reverse_key = {other_stop, stop};
-        if(!stops_distances_.count(reverse_key)){
-            stops_distances_[reverse_key] = dist.distance;
-        }
+    std::pair<const Stop*, const Stop*> reverse_key = {other_stop, stop};
+    if(!stops_distances_.count(reverse_key)){
+        stops_distances_[reverse_key] = distance;
     }
 }
 
@@ -62,11 +60,11 @@ BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name) const{
     if(bus == nullptr){
         return result;
     }
-    result.isFind = true;
-    result.R = GetStopsOnRoute(bus);
-    result.U = GetUniqueStops(bus);
-    result.L = GetLengthBus(bus);
-    result.C = result.L / GetRouteLength(bus);
+    result.is_find = true;
+    result.route_length = GetStopsOnRoute(bus);
+    result.unique_stops = GetUniqueStops(bus);
+    result.lenght_bus = GetLengthBus(bus);
+    result.curvature = result.lenght_bus / GetRouteLength(bus);
     return result;
 
 }
@@ -77,17 +75,10 @@ StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) const{
     if(stop == nullptr){
         return result;
     }
-    result.isFind = true;
+    result.is_find = true;
     result.buses = GetSetBuses(stop);
     return result;
 }
-
-void TransportCatalogue::PrintStopDistance() const{
-    for(const auto [key, value] : stops_distances_){
-        std::cout << "Keys : {" << key.first->name << ", " << key.second->name << "} - Value: " << value << '\n';
-    }
-}
-
 
 int TransportCatalogue::GetStopsOnRoute(const Bus* bus) const{
     return bus->stops.size();
