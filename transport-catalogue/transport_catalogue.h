@@ -5,51 +5,19 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <map>
 
-#include "geo.h"
+#include "domain.h"
 
 namespace transport_catalogue{
 
-namespace detail{
-
-struct Stop{
-	std::string name;
-	geo::Coordinates coords;
-};
-
-
-struct Bus{
-	std::string name;
-	std::vector<const Stop*> stops;
-};
-
-struct StopInfo{
-	bool is_find = false;
-	std::set<std::string> buses {};
-};
-
-struct BusInfo{
-	bool is_find = false;
-	int route_length = 0;
-	int unique_stops = 0;
-	int lenght_bus = 0;
-	double curvature = 0;
-};
-
-struct StopsPtrPairHasher{
-    size_t operator()(const std::pair<const Stop*, const Stop*>& value) const{
-        return std::hash<const void*>{}(value.first) * 37 + std::hash<const void*>{}(value.second);
-    } 
-};
-
-}; //namespace detail
 
 using geo::Coordinates;
 using geo::Distance;
-using detail::Stop;
-using detail::Bus;
-using detail::StopInfo;
-using detail::BusInfo;
+using domain::Stop;
+using domain::Bus;
+using domain::StopInfo;
+using domain::BusInfo;
 
 
 class TransportCatalogue {
@@ -57,16 +25,17 @@ public:
 	void AddStop(std::string_view stop_name, Coordinates coords);
 	void AddStopDistance(std::string_view stop_name, std::string_view other_stop_name, int distance);
 	const Stop* FindStop(std::string_view stop_name) const;
-	void AddBus(std::string_view bus_name, std::vector<std::string_view> route);
+	void AddBus(std::string_view bus_name, std::vector<std::string_view> route, bool is_roundtrip);
 	const Bus* FindBus(std::string_view bus_name) const;
 	BusInfo GetBusInfo(std::string_view bus_name) const;
 	StopInfo GetStopInfo(std::string_view stop_name) const;
+	std::map<std::string_view, const Bus*> GetBuses() const;
 private:
 
 	int GetStopsOnRoute(const Bus* bus) const;
 	int GetUniqueStops(const Bus* bus) const;
-	double GetRouteLength(const Bus* bus) const;
-	int GetLengthBus(const Bus* bus) const;
+	int GetRouteLength(const Bus* bus) const;
+	double GetLengthBus(const Bus* bus) const;
 
 	std::set<std::string> GetSetBuses(const Stop* stop) const;
 
@@ -78,7 +47,7 @@ private:
 
 	std::unordered_map<const Stop*, std::set<std::string>> stop_to_buses_;
 
-	std::unordered_map<std::pair<const Stop*, const Stop*>, int, detail::StopsPtrPairHasher> stops_distances_;
+	std::unordered_map<std::pair<const Stop*, const Stop*>, int, domain::StopsPtrPairHasher> stops_distances_;
 };
 
 }; //namespace transport_catalogue
