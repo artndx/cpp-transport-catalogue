@@ -37,7 +37,7 @@ namespace json {
 
     // Builder
 
-	KeyBaseContext Builder::Key(std::string key) {
+	Builder::KeyBaseContext Builder::Key(std::string key) {
 		if (!is_empty_ && !nodes_stack_.empty() && nodes_stack_.back()->IsDict()) {
 			Dict& dict = const_cast<Dict&>(nodes_stack_.back()->AsDict());
 			nodes_stack_.emplace_back(&dict[std::move(key)]);
@@ -78,12 +78,12 @@ namespace json {
 		throw std::logic_error("Incorrect place for value"s);
 	}
 
-	DictBaseContext Builder::StartDict() {
+	Builder::DictBaseContext Builder::StartDict() {
 		Value(Dict{}, true);
 		return *this;
 	}
 
-	ArrayBaseContext Builder::StartArray() {
+	Builder::ArrayBaseContext Builder::StartArray() {
 		Value(Array{}, true);
 		return *this;
 	}
@@ -112,34 +112,34 @@ namespace json {
 	}
     // BaseContext 
 
-	KeyBaseContext BaseContext::Key(std::string key) {
+	Builder::KeyBaseContext Builder::BaseContext::Key(std::string key) {
 		return builder_.Key(std::move(key));
 	}
 
-	DictBaseContext BaseContext::StartDict() {
+	Builder::DictBaseContext Builder::BaseContext::StartDict() {
 		return builder_.StartDict();
 	}
-	ArrayBaseContext BaseContext::StartArray() {
+	Builder::ArrayBaseContext Builder::BaseContext::StartArray() {
 		return builder_.StartArray();
 	}
 
-	Builder& BaseContext::EndDict() {
+	Builder& Builder::BaseContext::EndDict() {
 		return builder_.EndDict();
 	}
 
-	Builder& BaseContext::EndArray() {
+	Builder& Builder::BaseContext::EndArray() {
 		return builder_.EndArray();
 	}
 
     // KeyBaseContext
 
-	DictBaseContext KeyBaseContext::Value(Node::Value value) {
+	Builder::Builder::DictBaseContext Builder::KeyBaseContext::Value(Node::Value value) {
 		return builder_.Value(value);
 	}
 
     // ArrayBaseContext
 
-    ArrayBaseContext ArrayBaseContext::Value(Node::Value value) {
+    Builder::ArrayBaseContext Builder::ArrayBaseContext::Value(Node::Value value) {
 		return builder_.Value(value);
 	}
 }

@@ -2,11 +2,6 @@
 
 namespace json{
 
-class BaseContext;
-class KeyBaseContext;
-class DictBaseContext;
-class ArrayBaseContext;
-
 struct NodeVisitor{
     Node operator()(std::nullptr_t value);
     Node operator()(const Array& value);
@@ -19,6 +14,11 @@ struct NodeVisitor{
 
 class Builder {
 public:
+    class BaseContext;
+    class KeyBaseContext;
+    class DictBaseContext;
+    class ArrayBaseContext;
+    
     Builder() = default;
     KeyBaseContext Key(std::string key);
     Builder& Value(Node::Value value, bool is_beginning = false);
@@ -33,7 +33,7 @@ private:
     bool is_empty_ = true;
 };
 
-class BaseContext {
+class Builder::BaseContext {
 public:
     BaseContext(Builder& builder)
     :builder_(builder){}
@@ -47,7 +47,7 @@ protected:
     Builder& builder_;
 };
 
-class KeyBaseContext : BaseContext {
+class Builder::KeyBaseContext : BaseContext {
 public:
     using BaseContext::BaseContext;
     using BaseContext::StartDict;
@@ -56,14 +56,14 @@ public:
     DictBaseContext Value(Node::Value value);
 };
 
-class DictBaseContext : BaseContext {
+class Builder::DictBaseContext : BaseContext {
 public:
     using BaseContext::BaseContext;
     using BaseContext::Key;
     using BaseContext::EndDict;
 };
 
-class ArrayBaseContext : BaseContext {
+class Builder::ArrayBaseContext : BaseContext {
 public:
     using BaseContext::BaseContext;
     using BaseContext::StartDict;
