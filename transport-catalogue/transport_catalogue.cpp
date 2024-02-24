@@ -111,17 +111,18 @@ double TransportCatalogue::GetLengthBus(const Bus* bus) const{
     std::vector<const Stop*> stops = bus->stops;
     double result = 0;
     if(stops.size() != 0){
-        for(int i = 0; i < stops.size()-1; ++i){
+        for(size_t i = 0; i < stops.size()-1; ++i){
             result += geo::ComputeDistance(stops[i]->coords, stops[i+1]->coords);
         }
     }
     return result;
 }
+
 int TransportCatalogue::GetRouteLength(const Bus* bus) const{
     int result = 0;
     size_t amount_stops = bus->stops.size();
     if(amount_stops != 0){
-        for(int i = 0; i < amount_stops - 1; ++i){
+        for(size_t i = 0; i < amount_stops - 1; ++i){
             std::pair<const Stop*, const Stop*> key {bus->stops[i], bus->stops[i+1]};
             result += stops_distances_.at(key);
         }

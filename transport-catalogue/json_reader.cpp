@@ -31,34 +31,47 @@ void JsonReader::GetResponses(std::ostream& output){
     for(MultiResponse& multi_response : responses){
         if(multi_response.IsResponseBusInfo()){
             ResponseBusInfo response = multi_response.AsResponseBusInfo(); 
-            Dict dict;
-            dict["curvature"] = response.curvature_;
-            dict["request_id"] = response.request_id_;
-            dict["route_length"] = response.route_length_;
-            dict["stop_count"] = response.stop_count_;
-            dict["unique_stop_count"] = response.unique_stop_count_;
+            Node dict = Builder()
+                .StartDict()
+                    .Key("curvature").Value(response.curvature_)
+                    .Key("request_id").Value(response.request_id_)
+                    .Key("route_length").Value(response.route_length_)
+                    .Key("stop_count").Value(response.stop_count_)
+                    .Key("unique_stop_count").Value(response.unique_stop_count_)
+                .EndDict()
+            .Build();
             json_response.emplace_back(dict);
         } else if(multi_response.IsResponseStopInfo()){
             ResponseStopInfo response = multi_response.AsResponseStopInfo(); 
-            Dict dict;
             Array buses;
             for(std::string bus : response.buses_){
                 buses.push_back(bus);
             }
-            dict["buses"] = buses;
-            dict["request_id"] = response.request_id_;
+
+            Node dict = Builder()
+                .StartDict()
+                    .Key("buses").Value(buses)
+                    .Key("request_id").Value(response.request_id_)
+                .EndDict()
+            .Build();
             json_response.emplace_back(dict);
         } else if(multi_response.IsResponseError()){
             ResponseError response = multi_response.AsResponseError(); 
-            Dict dict;
-            dict["request_id"] = response.request_id_;
-            dict["error_message"] = response.error_message;
+            Node dict = Builder()
+                .StartDict()
+                    .Key("request_id").Value(response.request_id_)
+                    .Key("error_message").Value(response.error_message)
+                .EndDict()
+            .Build();
             json_response.emplace_back(dict);
         } else if(multi_response.IsResponseMap()){
             ResponseMap response = multi_response.AsResponseMap();
-            Dict dict;
-            dict["map"] = response.map_;
-            dict["request_id"] = response.request_id_;
+            Node dict = Builder()
+                .StartDict()
+                    .Key("map").Value(response.map_)
+                    .Key("request_id").Value(response.request_id_)
+                .EndDict()
+            .Build();
             json_response.emplace_back(dict);
         }
     }
@@ -74,7 +87,7 @@ RequestAddStop ConvertRequestStop(const  json::Dict& properties){
     double latitude = properties.at("latitude").AsDouble();
     double longitude = properties.at("longitude").AsDouble();
     Distances road_distances;
-    Dict dict = properties.at("road_distances").AsMap();
+    Dict dict = properties.at("road_distances").AsDict();
     for(auto& [stop, distance] : dict){
         road_distances[stop] = distance.AsInt();
     }
@@ -127,14 +140,14 @@ svg::Color GetColor(const json::Node& node_color){
 
 void JsonReader::ConvertBaseRequests(const json::Array& base_requests){
     for(const Node& node : base_requests){
-        Dict requests = node.AsMap();
+        Dict requests = node.AsDict();
         std::string type = requests.at("type").AsString();
         if(type == "Stop"){
             // Получаем все нужные свойства запроса
             // из узла-словаря и передаем
             // обработчику запросов
             request_handler_.AddBaseRequest(std::move(ConvertRequestStop(requests)));
-        } else if(node.AsMap().at("type").AsString() == "Bus"){
+        } else if(node.AsDict().at("type").AsString() == "Bus"){
             request_handler_.AddBaseRequest(std::move(ConvertRequestBus(requests)));
         }
     }
@@ -142,7 +155,7 @@ void JsonReader::ConvertBaseRequests(const json::Array& base_requests){
 
 void JsonReader::ConvertStatRequests(const json::Array& stat_requests){
     for(const Node& node : stat_requests){
-        Dict requests = node.AsMap();
+        Dict requests = node.AsDict();
         std::string type = requests.at("type").AsString();
         int id = requests.at("id").AsInt();
         if(type == "Bus" || type == "Stop"){
@@ -193,26 +206,26 @@ void JsonReader::ConvertRenderSettings(const json::Dict& render_settings){
 
 void JsonReader::AddConvertedRequests(std::ostringstream& sstream){
     Document document = LoadJSON(sstream.str());
-    Dict root_dict = document.GetRoot().AsMap();
+    Dict root_dict = document.GetRoot().AsDict();
     Array base_requests;
     Dict render_settings;
     Array stat_requests;
 
     if(root_dict.count("base_requests")){
-        base_requests = document.GetRoot().AsMap().at("base_requests").AsArray();
+        base_requests = document.GetRoot().AsDict().at("base_requests").AsArray();
         //Обработка запросов на обновление базы данных
         ConvertBaseRequests(base_requests);
     }
 
     if(root_dict.count("render_settings")){
-        render_settings = document.GetRoot().AsMap().at("render_settings").AsMap();   
+        render_settings = document.GetRoot().AsDict().at("render_settings").AsDict();   
         //Передача настроек визуализации рендеру
         ConvertRenderSettings(render_settings);
     }
 
     if(root_dict.count("stat_requests")){
-        stat_requests = document.GetRoot().AsMap().at("stat_requests").AsArray(); 
-        //Обработка запросов на получение данных из базы
+        stat_requests = document.GetRoot().AsDict().at("stat_requests").AsArray(); 
+        //Обработка запросов на получение AsDict из базы
         ConvertStatRequests(stat_requests);
     }
 }
