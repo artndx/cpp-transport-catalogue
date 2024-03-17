@@ -85,12 +85,24 @@ StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) const{
     return result;
 }
 
-std::map<std::string_view, const Bus*> TransportCatalogue::GetBuses() const{
+std::map<std::string_view, const Bus*> TransportCatalogue::GetSortedBuses() const{
     std::map<std::string_view, const Bus*> result;
     for(const Bus& bus : buses_){
         result[bus.name] = &bus;
     }
     return result;
+}
+
+const std::deque<Bus>& TransportCatalogue::GetBuses() const{
+    return buses_;
+}
+
+const std::deque<Stop>& TransportCatalogue::GetStops() const{
+    return stops_;
+}
+
+const std::unordered_map<PairStops, int, domain::StopsPtrPairHasher>& TransportCatalogue::GetStopDistances() const{
+    return stops_distances_;
 }
 
 

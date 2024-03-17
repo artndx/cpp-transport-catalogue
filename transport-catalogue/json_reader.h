@@ -33,6 +33,8 @@ private:
     void ConvertBaseRequests(const json::Array& base_requests);
     void ConvertStatRequests(const json::Array& stat_requests);
     void ConvertRenderSettings(const json::Dict& render_settings);
+    void ConvertRoutingSettings(const json::Dict& render_settings);
+
     // Обрабаывает JSON-данные и передает 
     // запросы в виде структур данных
     // обработчику запросов

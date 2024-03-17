@@ -73,6 +73,46 @@ void JsonReader::GetResponses(std::ostream& output){
                 .EndDict()
             .Build();
             json_response.emplace_back(dict);
+        } else if(multi_response.IsResponceRoute()){
+            using request_handler::detail::BaseEdgePtr;
+            using request_handler::detail::WaitEdgePtr;
+            using request_handler::detail::BusEdgePtr;
+
+            ResponseRoute response = multi_response.AsResponseRoute();
+            Array items;
+            for(const auto& item : response.items_){
+                if(item->type_ == "Wait"){
+                    WaitEdgePtr wait_edge = static_cast<WaitEdgePtr>(item.get());
+                    Node wait_item = Builder()
+                        .StartDict()
+                            .Key("stop_name").Value(wait_edge->stop_name_)
+                            .Key("time").Value(wait_edge->time_)
+                            .Key("type").Value(wait_edge->type_)
+                        .EndDict()
+                    .Build();
+                    items.push_back(wait_item);
+                } else if(item->type_ == "Bus"){
+                    BusEdgePtr bus_edge = static_cast<BusEdgePtr>(item.get());
+                    Node bus_item = Builder()
+                        .StartDict()
+                            .Key("bus").Value(bus_edge->bus_)
+                            .Key("span_count").Value(bus_edge->span_count_)
+                            .Key("time").Value(bus_edge->time_)
+                            .Key("type").Value(bus_edge->type_)
+                        .EndDict()
+                    .Build();
+                    items.push_back(bus_item);
+                }
+            }
+
+            Node dict = Builder()
+                .StartDict()
+                    .Key("items").Value(items)
+                    .Key("request_id").Value(response.request_id_)
+                    .Key("total_time").Value(response.total_time_)
+                .EndDict()
+            .Build();
+            json_response.emplace_back(dict);
         }
     }
     Document doc(json_response);
@@ -166,7 +206,19 @@ void JsonReader::ConvertStatRequests(const json::Array& stat_requests){
             RequestGetInfo request(type, name, id);
             request_handler_.AddStatRequest(std::move(request));
         } else if(type == "Map"){
-            RequestGetMap request(type, id);
+            RequestGetMap request(id);
+            request_handler_.AddStatRequest(std::move(request));
+        } else if(type == "Route"){
+            std::string from;
+            std::string to;
+            if(requests.count("from")){
+                from = requests.at("from").AsString();
+            }
+
+            if(requests.count("to")){
+                to = requests.at("to").AsString();
+            }
+            RequestGetRoute request(from, to, id);
             request_handler_.AddStatRequest(std::move(request));
         }
     }
@@ -204,12 +256,20 @@ void JsonReader::ConvertRenderSettings(const json::Dict& render_settings){
     request_handler_.AddRenderSettings(std::move(settings));   
 }
 
+void JsonReader::ConvertRoutingSettings(const json::Dict& routing_settings){
+    transport_router::RoutingSettings settings;
+    settings.bus_wait_time_ = routing_settings.at("bus_wait_time").AsInt();
+    settings.bus_velocity_ = routing_settings.at("bus_velocity").AsInt();
+    request_handler_.AddRoutingSettings(std::move(settings));
+}
+
 void JsonReader::AddConvertedRequests(std::ostringstream& sstream){
     Document document = LoadJSON(sstream.str());
     Dict root_dict = document.GetRoot().AsDict();
     Array base_requests;
     Dict render_settings;
     Array stat_requests;
+    Dict routing_settings;
 
     if(root_dict.count("base_requests")){
         base_requests = document.GetRoot().AsDict().at("base_requests").AsArray();
@@ -227,6 +287,12 @@ void JsonReader::AddConvertedRequests(std::ostringstream& sstream){
         stat_requests = document.GetRoot().AsDict().at("stat_requests").AsArray(); 
         //Обработка запросов на получение AsDict из базы
         ConvertStatRequests(stat_requests);
+    }
+
+    if(root_dict.count("routing_settings")){
+        routing_settings = document.GetRoot().AsDict().at("routing_settings").AsDict();
+        //Передача настроек маршрутов
+        ConvertRoutingSettings(routing_settings);
     }
 }
 

@@ -5,6 +5,7 @@
 #include <map>
 #include "transport_catalogue.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 
 namespace transport_catalogue{
 
@@ -70,13 +71,22 @@ struct RequestGetInfo{
 };
 
 struct RequestGetMap{
-    RequestGetMap(std::string type, int id)
-    : type_(type), id_(id){}
-    std::string type_;
+    RequestGetMap(int id)
+    : id_(id){}
     int id_ = 0;
 };
 
-class MultiStatRequest : private std::variant<RequestGetInfo, RequestGetMap>{
+struct RequestGetRoute{
+    RequestGetRoute(std::string from, std::string to, int id)
+    :from_(from), to_(to), id_(id){}
+
+    std::string from_;
+    std::string to_;
+    int id_ = 0;
+
+};
+
+class MultiStatRequest : private std::variant<RequestGetInfo, RequestGetMap, RequestGetRoute>{
 public:
     using variant::variant;
 
@@ -94,6 +104,14 @@ public:
 
     RequestGetMap AsRequestGetMap(){
         return std::get<RequestGetMap>(*this);
+    }
+
+    bool IsRequestGetRoute(){
+        return std::holds_alternative<RequestGetRoute>(*this);
+    }
+
+    RequestGetRoute AsRequestGetRoute(){
+        return std::get<RequestGetRoute>(*this);
     }
 };
 
@@ -133,10 +151,25 @@ struct ResponseMap : BaseResponse{
     ResponseMap(int request_id, std::string map)
     : BaseResponse(request_id), map_(std::move(map)){}
 
-    std:: string map_;
+    std::string map_;
 };
 
-class MultiResponse : private std::variant<ResponseBusInfo, ResponseStopInfo, ResponseError, ResponseMap>{
+using BaseEdgePtr = typename std::shared_ptr<transport_router::TransportRouter<double>::BaseEdge>;
+using WaitEdgePtr = typename transport_router::TransportRouter<double>::WaitEdge*;
+using BusEdgePtr = typename transport_router::TransportRouter<double>::BusEdge*;
+
+
+struct ResponseRoute : BaseResponse{
+    ResponseRoute(int request_id, double total_time, std::vector<BaseEdgePtr> items)
+    : BaseResponse(request_id), total_time_(total_time), items_(std::move(items)){
+
+    }
+
+    double total_time_ = 0;
+    std::vector<BaseEdgePtr> items_;
+};
+
+class MultiResponse : private std::variant<ResponseBusInfo, ResponseStopInfo, ResponseError, ResponseMap, ResponseRoute>{
 public:
     using variant::variant;
 
@@ -171,6 +204,14 @@ public:
     ResponseMap AsResponseMap(){
         return std::get<ResponseMap>(*this);
     }
+
+    bool IsResponceRoute(){
+        return std::holds_alternative<ResponseRoute>(*this);
+    }
+
+    ResponseRoute AsResponseRoute(){
+        return std::get<ResponseRoute>(*this);
+    }
 };
 
 } // namespace detail
@@ -180,14 +221,20 @@ public:
     void AddBaseRequest(detail::MultiBaseRequest&& request);
     void AddStatRequest(detail::MultiStatRequest&& request);
     void AddRenderSettings(map_render::RenderSettings&& settings);
+    void AddRoutingSettings(transport_router::RoutingSettings&& settings);
 
     void ApplyRequests(TransportCatalogue& catalogue);
     std::vector<detail::MultiResponse>& GetResponses();
 private:
-    std::map<std::string, std::vector<detail::MultiBaseRequest>> base_requests;
+    void ApplyStopRequests(TransportCatalogue& catalogue);
+    void ApplyBusRequests(TransportCatalogue& catalogue);
+    void ApplyStatRequests(TransportCatalogue& catalogue);
+
+    std::map<std::string, std::vector<detail::MultiBaseRequest>> base_requests_;
     std::vector<detail::MultiStatRequest> stat_requests_;
     std::vector<detail::MultiResponse> responses_;
     map_render::MapRender map_render_;
+    transport_router::TransportRouter<double> router_;
 };
 
 } // namespace request_handler

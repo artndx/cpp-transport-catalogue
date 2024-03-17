@@ -19,6 +19,7 @@ using domain::Bus;
 using domain::StopInfo;
 using domain::BusInfo;
 
+using PairStops = std::pair<const Stop*, const Stop*>;
 
 class TransportCatalogue {
 public:
@@ -29,7 +30,10 @@ public:
 	const Bus* FindBus(std::string_view bus_name) const;
 	BusInfo GetBusInfo(std::string_view bus_name) const;
 	StopInfo GetStopInfo(std::string_view stop_name) const;
-	std::map<std::string_view, const Bus*> GetBuses() const;
+	std::map<std::string_view, const Bus*> GetSortedBuses() const;
+	const std::deque<Bus>& GetBuses() const;
+	const std::deque<Stop>& GetStops() const;
+	const std::unordered_map<PairStops, int, domain::StopsPtrPairHasher>& GetStopDistances() const;
 private:
 
 	int GetStopsOnRoute(const Bus* bus) const;
@@ -47,7 +51,7 @@ private:
 
 	std::unordered_map<const Stop*, std::set<std::string>> stop_to_buses_;
 
-	std::unordered_map<std::pair<const Stop*, const Stop*>, int, domain::StopsPtrPairHasher> stops_distances_;
+	std::unordered_map<PairStops, int, domain::StopsPtrPairHasher> stops_distances_;
 };
 
 }; //namespace transport_catalogue
